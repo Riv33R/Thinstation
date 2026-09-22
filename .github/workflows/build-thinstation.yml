@@ -32,7 +32,7 @@ jobs:
         run: |
           echo "=== Дисковое пространство до очистки ==="
           df -h /
-          echo "=== Удаление неиспользуемых компонентов runners для освобождения места ==="
+          echo "=== Удаление неиспользуемых компонентов runner для освобождения места ==="
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
@@ -40,6 +40,23 @@ jobs:
           sudo docker image prune -a --force || true
           echo "=== Дисковое пространство после очистки ==="
           df -h /
+
+      - name: Download Omnissa Horizon Client RPM
+        run: |
+          mkdir -p downloads
+          HORIZON_RPM="downloads/Omnissa-Horizon-Client-2506-8.16.0-16536624989.x64.rpm"
+          echo "=== Загрузка RPM-пакета Omnissa Horizon Client из Google Drive ==="
+          curl -fSL --retry 5 --retry-delay 3 \
+            -o "$HORIZON_RPM" \
+            "https://drive.usercontent.google.com/download?id=1TsopTTdWTlszhXrYD3uQiLhYD9qqvp83&export=download&confirm=t"
+          
+          echo "=== Проверка скачанного файла ==="
+          ls -lh "$HORIZON_RPM"
+          FILESIZE=$(stat -c%s "$HORIZON_RPM")
+          if [ "$FILESIZE" -lt 100000000 ]; then
+            echo "Ошибка: скачанный файл поврежден или слишком мал ($FILESIZE байт)"
+            exit 1
+          fi
 
       - name: Run Thinstation Build inside Privileged Container
         run: |
@@ -55,10 +72,10 @@ jobs:
           # Сборка запускается в привилегированном контейнере Fedora 42 (для 7.2) или Ubuntu (для 6.2)
           if [ "$VERSION" = "7.2-Stable" ]; then
             CONTAINER_IMAGE="fedora:42"
-            SETUP_CMD="dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which"
+            SETUP_CMD="dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which curl"
           else
             CONTAINER_IMAGE="ubuntu:22.04"
-            SETUP_CMD="apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git build-essential xorriso squashfs-tools bc libncurses5-dev libssl-dev bison flex syslinux-utils"
+            SETUP_CMD="apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git build-essential xorriso squashfs-tools bc libncurses5-dev libssl-dev bison flex syslinux-utils curl"
           fi
 
           docker run --privileged --rm \

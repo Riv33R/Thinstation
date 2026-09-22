@@ -43,7 +43,16 @@ touch ts/etc/READ etc/READ 2>/dev/null || true
 echo "--> Инициализация chroot-окружения (install-only)..."
 ./setup-chroot -a -i < /dev/null
 
-# Подготовка каталога downloads для проприетарных пакетов (Horizon / VMware)
+HORIZON_RPM="Omnissa-Horizon-Client-2506-8.16.0-16536624989.x64.rpm"
+GDRIVE_URL="https://drive.usercontent.google.com/download?id=1TsopTTdWTlszhXrYD3uQiLhYD9qqvp83&export=download&confirm=t"
+
+mkdir -p "${WORKSPACE_DIR}/downloads"
+if [ ! -f "${WORKSPACE_DIR}/downloads/${HORIZON_RPM}" ] || [ "$(stat -c%s "${WORKSPACE_DIR}/downloads/${HORIZON_RPM}" 2>/dev/null || echo 0)" -lt 100000000 ]; then
+    echo "--> Скачивание ${HORIZON_RPM} из Google Drive..."
+    curl -fSL --retry 5 --retry-delay 3 -o "${WORKSPACE_DIR}/downloads/${HORIZON_RPM}" "${GDRIVE_URL}"
+fi
+
+# Подготовка каталогов downloads для проприетарных пакетов (Horizon / VMware)
 mkdir -p downloads /downloads ts/build/downloads
 if [ -d "${WORKSPACE_DIR}/downloads" ] && [ -n "$(ls -A "${WORKSPACE_DIR}/downloads" 2>/dev/null)" ]; then
     echo "  [OK] Копирование файлов из каталога downloads репозитория..."
@@ -51,6 +60,10 @@ if [ -d "${WORKSPACE_DIR}/downloads" ] && [ -n "$(ls -A "${WORKSPACE_DIR}/downlo
     cp -vf "${WORKSPACE_DIR}/downloads/"* /downloads/ 2>/dev/null || true
     cp -vf "${WORKSPACE_DIR}/downloads/"* ts/build/downloads/ 2>/dev/null || true
 fi
+
+echo "  [OK] Проверка наличия пакета Horizon Client:"
+ls -lh downloads/${HORIZON_RPM} || true
+ls -lh /downloads/${HORIZON_RPM} || true
 
 echo "--> Применение конфигурационных файлов для vdi.dnestrschool1.online..."
 if [ -f "${CONF_DIR}/build.conf" ]; then
