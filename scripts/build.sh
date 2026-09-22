@@ -90,7 +90,7 @@ mkdir -p "${OUTPUT_DIR}"
 for bdir in "${BUILD_DIR}/ts/build/boot-images" "${BUILD_DIR}/boot-images" "/build/boot-images"; do
     if [ -d "$bdir" ]; then
         echo "  [OK] Найдена папка образов: $bdir"
-        find "$bdir" -type f \( -name "*.iso" -o -name "*.img" -o -name "vmlinuz*" -o -name "initrd*" \) -exec cp -vf {} "${OUTPUT_DIR}/" \;
+        find "$bdir" -type f \( -name "*.iso" -o -name "*.img" -o -name "vmlinuz*" -o -name "initrd*" -o -name "*.squash*" \) -exec cp -vf {} "${OUTPUT_DIR}/" \;
     fi
 done
 
