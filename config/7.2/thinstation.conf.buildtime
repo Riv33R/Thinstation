@@ -3,14 +3,28 @@
 # Сервер VDI: vdi.dnestrschool1.online (VMware / Omnissa Horizon)
 # ==============================================================================
 
-# --- Настройки сессии Omnissa / VMware Horizon ---
-SESSION_0_TITLE="VDI"
-SESSION_0_TYPE=horizon
-SESSION_0_AUTOSTART=On
-SESSION_0_HORIZON_SERVER="VDI"
-SESSION_0_HORIZON_SERVERURL="https://vdi.dnestrschool1.online"
-SESSION_0_HORIZON_FULLSCREEN=true
-SESSION_0_HORIZON_NONINTERACTIVE=false
+# --- Оконный менеджер и рабочий стол XFCE (SESSION_0) ---
+SESSION_0_TYPE=xfwm4
+SESSION_0_AUTOSTART=on
+XFWM4_COMPOSITING=true
+XFWM4_START_POSITION="BOTTOM"
+PANEL_PAGER=false
+PANEL_USER=false
+PANEL_REV_CLOCKSYSTRAY=true
+GTK_THEME=Adwaita
+XFWM4_THEME=Default
+DESKTOP_ICON_SIZE=48
+
+# --- Сессия Omnissa / VMware Horizon Client (SESSION_1) ---
+SESSION_1_TITLE="VDI"
+SESSION_1_TYPE=horizon
+SESSION_1_AUTOSTART=on
+SESSION_1_ICON=On
+SESSION_1_HORIZON_SERVER="VDI"
+SESSION_1_HORIZON_SERVERURL="https://vdi.dnestrschool1.online"
+# Оконный режим (false) оставляет нижнюю панель с Wi-Fi апплетом видимой на ноутбуках:
+SESSION_1_HORIZON_FULLSCREEN=false
+SESSION_1_HORIZON_NONINTERACTIVE=false
 
 # --- Глобальные параметры клиента Horizon (Автоподключение и SSL) ---
 # Жестко фиксирует адрес сервера по умолчанию в настройках Horizon Client:
@@ -32,18 +46,13 @@ XKBVARIANT=","
 XKBOPTIONS="grp:alt_shift_toggle,grp_led:scroll"
 LOCALE=ru_RU
 
-# --- Разрешение экрана и оконный менеджер ---
+# --- Разрешение экрана ---
 SET_RESOLUTION_MULTIMONITOR_EXPAND='mirror'
 SET_RESOLUTION_MULTIMONITOR_AUTOSCALE='scale'
-DESKTOP_ICON_SIZE=48
-GTK_THEME=Adwaita
-XFWM4_THEME=Default
-PANEL_PAGER=false
-PANEL_USER=false
-PANEL_REV_CLOCKSYSTRAY=true
 
 # --- Сеть и синхронизация времени (NTP) ---
 NET_USE=BOTH
+NET_IPV4_MODE=auto
 NET_USE_DHCP=on
 NET_HOSTNAME=ts-*
 TIME_ZONE=Europe/Chisinau

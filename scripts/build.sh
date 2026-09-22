@@ -80,6 +80,55 @@ else
     echo "  [!] Внимание: ${CONF_DIR}/thinstation.conf.buildtime не найден"
 fi
 
+echo "--> Применение оптимизаций сети и рабочего стола..."
+# 1. Отключение NetworkManager-wait-online (устраняет 90-секундное зависание при старте)
+if [ -f "ts/build/packages/networkmanager/build/finalize" ]; then
+    echo "  [OK] Патч networkmanager: отключение блокирующего NetworkManager-wait-online"
+    sed -i '/NetworkManager-wait-online/d' ts/build/packages/networkmanager/build/finalize || true
+fi
+
+# 2. Настройка NetworkManager на внутренний DHCP-клиент (dhcp=internal вместо устаревшего dhclient)
+mkdir -p ts/build/packages/networkmanager/build/extra/etc/NetworkManager/conf.d
+cat << 'EOF' > ts/build/packages/networkmanager/build/extra/etc/NetworkManager/conf.d/10-dhcp.conf
+[main]
+dhcp=internal
+EOF
+
+# 3. Гарантированный автозапуск nm-applet в системном трее
+mkdir -p ts/build/packages/networkmanager/build/extra/etc/xdg/autostart
+cat << 'EOF' > ts/build/packages/networkmanager/build/extra/etc/xdg/autostart/nm-applet.desktop
+[Desktop Entry]
+Name=Network
+Comment=Manage your network connections
+Icon=nm-device-wireless
+Exec=nm-applet
+Terminal=false
+Type=Application
+NotShowIn=KDE;
+EOF
+
+# 4. Предварительно созданный профиль проводной сети (Ethernet auto-dhcp)
+mkdir -p ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections
+cat << 'EOF' > ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections/Wired.nmconnection
+[connection]
+id=Wired
+uuid=d6b7b252-0c98-4c22-901c-6d9e79435bcf
+type=ethernet
+autoconnect=true
+autoconnect-priority=1
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+EOF
+chmod 600 ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections/Wired.nmconnection || true
+
+# 5. Привязка machine-id для D-Bus (устранение ошибки Horizon CdkClientInfo_SaveDeviceID)
+mkdir -p ts/build/packages/base/build/extra/var/lib/dbus
+ln -sf /etc/machine-id ts/build/packages/base/build/extra/var/lib/dbus/machine-id 2>/dev/null || true
+
 echo "--> Запуск сборки образа ThinStation..."
 ./setup-chroot -b < /dev/null
 
