@@ -4,17 +4,21 @@
 # ==============================================================================
 
 # --- Настройки сессии Omnissa / VMware Horizon ---
-SESSION_0_TITLE="VDI School"
+SESSION_0_TITLE="VDI"
 SESSION_0_TYPE=horizon
 SESSION_0_AUTOSTART=On
-SESSION_0_HORIZON_SERVER="VDI School"
+SESSION_0_HORIZON_SERVER="VDI"
 SESSION_0_HORIZON_SERVERURL="https://vdi.dnestrschool1.online"
 SESSION_0_HORIZON_FULLSCREEN=true
 SESSION_0_HORIZON_NONINTERACTIVE=false
 
-# Глобальные параметры клиента Horizon
+# --- Глобальные параметры клиента Horizon (Автоподключение и SSL) ---
+# Жестко фиксирует адрес сервера по умолчанию в настройках Horizon Client:
+HORIZON_DEFAULTBROKER="https://vdi.dnestrschool1.online"
+# Автоматическое подключение к серверу без необходимости кликать на плитку сервера:
 HORIZON_AUTOCONNECT=TRUE
-HORIZON_SSLVERIFYMODE=1
+# Режим проверки SSL (3 = не прерывать подключение из-за сбоя сертификата/рассинхронизации часов):
+HORIZON_SSLVERIFYMODE=3
 
 # --- Настройки звука ---
 AUDIO_LEVEL=85
@@ -44,6 +48,11 @@ NET_USE_DHCP=on
 NET_HOSTNAME=ts-*
 TIME_ZONE=Europe/Chisinau
 NET_TIME_SERVER=pool.ntp.org
+
+# Опционально: если требуется настроить бесшовное автоподключение к известной сети Wi-Fi,
+# раскомментируйте следующие строки и укажите SSID и пароль:
+# WIRELESS_ESSID="Ваш_WiFi_SSID"
+# WIRELESS_WPAKEY="Ваш_WiFi_Пароль"
 
 # --- Проброс и монтирование USB флеш-накопителей ---
 USB_STORAGE_SYNC=on

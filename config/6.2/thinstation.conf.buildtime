@@ -4,15 +4,17 @@
 # ==============================================================================
 
 # --- Настройки сессии VMware View ---
-SESSION_0_TITLE="VDI School"
+SESSION_0_TITLE="VDI"
 SESSION_0_TYPE=vmview
 SESSION_0_AUTOSTART=On
+SESSION_0_VMVIEW_SERVER="VDI"
 SESSION_0_VMVIEW_SERVERURL="https://vdi.dnestrschool1.online"
 SESSION_0_VMVIEW_FULLSCREEN=true
 
 # Глобальные параметры клиента Horizon View
+VMVIEW_DEFAULTBROKER="https://vdi.dnestrschool1.online"
 VMVIEW_AUTOCONNECT=TRUE
-VMVIEW_SSLVERIFYMODE=1
+VMVIEW_SSLVERIFYMODE=3
 
 # --- Настройки звука ---
 AUDIO_LEVEL=85
