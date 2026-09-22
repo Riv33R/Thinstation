@@ -22,11 +22,6 @@ SESSION_1_AUTOSTART=on
 SESSION_1_ICON=On
 SESSION_1_HORIZON_SERVER="VDI"
 SESSION_1_HORIZON_SERVERURL="https://vdi.dnestrschool1.online"
-# Поддержка нескольких мониторов (расширение VDI рабочего стола на все подключенные экраны):
-SESSION_1_HORIZON_ALLMONITORS=true
-SESSION_1_HORIZON_FULLSCREEN=true
-SESSION_1_HORIZON_KEEP_WM_BINDINGS=true
-SESSION_1_HORIZON_NONINTERACTIVE=false
 
 # --- Глобальные параметры клиента Horizon (Автоподключение и SSL) ---
 # Жестко фиксирует адрес сервера по умолчанию в настройках Horizon Client:

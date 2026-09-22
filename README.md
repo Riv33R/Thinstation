@@ -119,9 +119,6 @@ git push origin main
 | `SESSION_1_TYPE` | `horizon` | Тип сессии — нативный клиент Omnissa/VMware Horizon |
 | `SESSION_1_TITLE` | `VDI` | Заголовок и идентификатор сессии |
 | `SESSION_1_HORIZON_SERVERURL` | `https://vdi.dnestrschool1.online` | Адрес сервера VDI Horizon |
-| `SESSION_1_HORIZON_ALLMONITORS`| `true` | Использовать все подключенные экраны для удаленного рабочего стола |
-| `SESSION_1_HORIZON_FULLSCREEN` | `true` | Полноэкранный режим сессии Horizon |
-| `SESSION_1_HORIZON_KEEP_WM_BINDINGS` | `true` | Сохранение системных комбинаций клавиш (`Alt+Tab`, `Super`) для переключения на панель |
 | `HORIZON_DEFAULTBROKER` | `https://vdi.dnestrschool1.online` | Предзаполненный адрес сервера в клиенте Horizon |
 | `HORIZON_AUTOCONNECT` | `TRUE` | Автоматический переход к окну ввода логина/пароля без выбора сервера вручную |
 | `HORIZON_SSLVERIFYMODE` | `3` | Режим проверки SSL (не прерывает соединение при расхождениях времени или нехватке CA) |
@@ -147,7 +144,7 @@ git push origin main
 
 ```bash
 docker run --privileged --rm -v ${PWD}:/workspace fedora:42 /bin/bash -c "
-  dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which
+  dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which curl linux-firmware wireless-regdb network-manager-applet rfkill iw wireless-tools
   chmod +x /workspace/scripts/build.sh
   /workspace/scripts/build.sh 7.2-Stable /workspace
 "

@@ -180,6 +180,39 @@ cp -vf ts/build/packages/base/build/extra/etc/skel/.omnissa/horizon-preferences 
 mkdir -p ts/build/packages/base/build/extra/root/.vmware
 cp -vf ts/build/packages/base/build/extra/etc/skel/.vmware/view-preferences ts/build/packages/base/build/extra/root/.vmware/ 2>/dev/null || true
 
+# Обязательная конфигурация (mandatory config) для безусловного применения адреса сервера и автоконнекта
+cp -vf ts/build/packages/base/build/extra/etc/omnissa/horizon-default-config ts/build/packages/base/build/extra/etc/omnissa/horizon-mandatory-config 2>/dev/null || true
+cp -vf ts/build/packages/base/build/extra/etc/vmware/view-default-config ts/build/packages/base/build/extra/etc/vmware/view-mandatory-config 2>/dev/null || true
+
+# Скрипт-обертка для horizon-client: перехватывает и очищает некорректные флаги CLI
+mkdir -p ts/build/packages/base/build/extra/usr/local/bin
+cat << 'EOF' > ts/build/packages/base/build/extra/usr/local/bin/horizon-client
+#!/bin/sh
+# Обертка для безопасного запуска horizon-client без сбойных параметров CLI
+CLEAN_ARGS=""
+for arg in "$@"; do
+    case "$arg" in
+        --keep_wm_bindings*)
+            # Игнорировать неизвестный параметр
+            ;;
+        --noninteractive=false|--nonInteractive=false)
+            # Игнорировать некорректное значение
+            ;;
+        --allmonitors=true)
+            CLEAN_ARGS="$CLEAN_ARGS --allmonitors"
+            ;;
+        --fullscreen=true)
+            CLEAN_ARGS="$CLEAN_ARGS --fullscreen"
+            ;;
+        *)
+            CLEAN_ARGS="$CLEAN_ARGS $arg"
+            ;;
+    esac
+done
+exec /usr/bin/horizon-client $CLEAN_ARGS
+EOF
+chmod +x ts/build/packages/base/build/extra/usr/local/bin/horizon-client || true
+
 # 8. Автоматическое расширение рабочего стола на все подключенные мониторы (Multi-Monitor Extended Desktop)
 mkdir -p ts/build/packages/base/build/extra/bin
 cat << 'EOF' > ts/build/packages/base/build/extra/bin/auto-multimonitor
@@ -217,6 +250,41 @@ EOF
 mkdir -p ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d
 cp -vf ts/build/packages/base/build/extra/bin/auto-multimonitor ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d/00-multimonitor.sh || true
 chmod +x ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d/00-multimonitor.sh || true
+
+# 9. Интеграция прошивок беспроводных сетей (Wi-Fi Firmware) и авторазблокировка радиомодулей
+echo "--> Копирование прошивок беспроводных адаптеров (Wi-Fi firmware)..."
+mkdir -p ts/build/packages/base/build/extra/lib/firmware
+cp -vf /lib/firmware/regulatory.db* ts/build/packages/base/build/extra/lib/firmware/ 2>/dev/null || true
+for fw in iwlwifi* intel rtw88 rtw89 rtlwifi mediatek ath10k ath11k brcm; do
+    for src in /lib/firmware/$fw; do
+        if [ -e "$src" ]; then
+            cp -rf "$src" ts/build/packages/base/build/extra/lib/firmware/ 2>/dev/null || true
+        fi
+    done
+done
+
+# Копирование nm-applet если установлен в сборочном контейнере
+mkdir -p ts/build/packages/base/build/extra/usr/bin
+if [ -f "/usr/bin/nm-applet" ]; then
+    echo "  [OK] Копирование nm-applet в образ..."
+    cp -vf /usr/bin/nm-applet ts/build/packages/base/build/extra/usr/bin/ 2>/dev/null || true
+    [ -f "/usr/bin/nm-connection-editor" ] && cp -vf /usr/bin/nm-connection-editor ts/build/packages/base/build/extra/usr/bin/ 2>/dev/null || true
+fi
+
+# Разблокировка радиомодулей Wi-Fi и включение радио в NetworkManager
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/xdg/autostart/01-wifi-unblock.desktop
+[Desktop Entry]
+Type=Application
+Name=WiFi Unblock
+Exec=/bin/sh -c "rfkill unblock all 2>/dev/null; nmcli radio wifi on 2>/dev/null"
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+# Гарантия наличия nm-applet в автозапуске base пакета
+mkdir -p ts/build/packages/base/build/extra/etc/xdg/autostart
+cp -vf ts/build/packages/networkmanager/build/extra/etc/xdg/autostart/nm-applet.desktop ts/build/packages/base/build/extra/etc/xdg/autostart/ 2>/dev/null || true
 
 echo "--> Запуск сборки образа ThinStation..."
 ./setup-chroot -b < /dev/null
