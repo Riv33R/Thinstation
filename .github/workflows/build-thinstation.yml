@@ -89,6 +89,11 @@ jobs:
               /workspace/scripts/build.sh \"$VERSION\" /workspace
             "
 
+      - name: Verify output directory
+        run: |
+          echo "=== Проверка содержимого каталога output на хосте ==="
+          ls -la output/ || true
+
       - name: Upload ISO and Boot Images as Artifact
         uses: actions/upload-artifact@v4
         with:

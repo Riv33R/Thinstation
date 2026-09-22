@@ -84,21 +84,32 @@ echo "--> Запуск сборки образа ThinStation..."
 ./setup-chroot -b < /dev/null
 
 echo "--> Поиск и экспорт созданных загрузочных образов..."
-# ThinStation помещает образы в boot-images/ (grub/thinstation-efi.iso или iso/thinstation.iso)
-found_any=false
-while IFS= read -r file; do
-    echo "  [Сохранение] $file"
-    cp -vf "$file" "${OUTPUT_DIR}/"
-    found_any=true
-done < <(find boot-images/ -type f \( -name "*.iso" -o -name "*.img" -o -name "vmlinuz*" -o -name "initrd*" \))
+mkdir -p "${OUTPUT_DIR}"
 
-if [ "$found_any" = false ]; then
-    echo "  [!] Образы в boot-images не найдены по маске, копируем всё содержимое boot-images..."
-    cp -rvf boot-images/* "${OUTPUT_DIR}/" 2>/dev/null || true
-fi
+# 1. Поиск в каталогах boot-images (ThinStation 7.2 использует ts/build/boot-images)
+for bdir in "${BUILD_DIR}/ts/build/boot-images" "${BUILD_DIR}/boot-images" "/build/boot-images"; do
+    if [ -d "$bdir" ]; then
+        echo "  [OK] Найдена папка образов: $bdir"
+        find "$bdir" -type f \( -name "*.iso" -o -name "*.img" -o -name "vmlinuz*" -o -name "initrd*" \) -exec cp -vf {} "${OUTPUT_DIR}/" \;
+    fi
+done
+
+# 2. Общий рекурсивный поиск ISO-образов во всей директории сборки
+find "${BUILD_DIR}" /build -type f -name "*.iso" -exec cp -vf {} "${OUTPUT_DIR}/" \; 2>/dev/null || true
+
+
+# Обеспечиваем полные права на чтение файлов раннером GitHub Actions
+chmod -R 777 "${OUTPUT_DIR}" 2>/dev/null || true
 
 echo "============================================================"
-echo " Сборка завершена успешно!"
 echo " Список сформированных файлов в ${OUTPUT_DIR}:"
 ls -lh "${OUTPUT_DIR}"
 echo "============================================================"
+
+# Проверяем, что выходная папка не пуста
+if [ -z "$(ls -A "${OUTPUT_DIR}" 2>/dev/null)" ]; then
+    echo "ОШИБКА: Загрузочные образы не найдены! Выводим дерево ts/build для диагностики:"
+    find "${BUILD_DIR}/ts/build" -maxdepth 4 -ls || true
+    exit 1
+fi
+
