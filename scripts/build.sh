@@ -129,6 +129,19 @@ chmod 600 ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system
 mkdir -p ts/build/packages/base/build/extra/var/lib/dbus
 ln -sf /etc/machine-id ts/build/packages/base/build/extra/var/lib/dbus/machine-id 2>/dev/null || true
 
+# 6. Конфигурация тачпада для X.Org (включение tap-to-click / клик касанием)
+mkdir -p ts/build/packages/base/build/extra/etc/X11/xorg.conf.d
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/X11/xorg.conf.d/30-touchpad.conf
+Section "InputClass"
+    Identifier "touchpad"
+    MatchIsTouchpad "on"
+    Driver "libinput"
+    Option "Tapping" "on"
+    Option "NaturalScrolling" "false"
+    Option "ClickMethod" "clickfinger"
+EndSection
+EOF
+
 echo "--> Запуск сборки образа ThinStation..."
 ./setup-chroot -b < /dev/null
 
