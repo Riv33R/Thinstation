@@ -22,8 +22,10 @@ SESSION_1_AUTOSTART=on
 SESSION_1_ICON=On
 SESSION_1_HORIZON_SERVER="VDI"
 SESSION_1_HORIZON_SERVERURL="https://vdi.dnestrschool1.online"
-# Оконный режим (false) оставляет нижнюю панель с Wi-Fi апплетом видимой на ноутбуках:
-SESSION_1_HORIZON_FULLSCREEN=false
+# Поддержка нескольких мониторов (расширение VDI рабочего стола на все подключенные экраны):
+SESSION_1_HORIZON_ALLMONITORS=true
+SESSION_1_HORIZON_FULLSCREEN=true
+SESSION_1_HORIZON_KEEP_WM_BINDINGS=true
 SESSION_1_HORIZON_NONINTERACTIVE=false
 
 # --- Глобальные параметры клиента Horizon (Автоподключение и SSL) ---
@@ -46,9 +48,11 @@ XKBVARIANT=","
 XKBOPTIONS="grp:alt_shift_toggle,grp_led:scroll"
 LOCALE=ru_RU
 
-# --- Разрешение экрана ---
-SET_RESOLUTION_MULTIMONITOR_EXPAND='mirror'
-SET_RESOLUTION_MULTIMONITOR_AUTOSCALE='scale'
+# --- Разрешение экрана и поддержка нескольких мониторов (Extended Desktop) ---
+USE_XRANDR=true
+XRANDR_OPTIONS="--auto"
+SET_RESOLUTION_MULTIMONITOR_EXPAND='expand'
+SET_RESOLUTION_MULTIMONITOR_AUTOSCALE='off'
 
 # --- Сеть и синхронизация времени (NTP) ---
 NET_USE=BOTH

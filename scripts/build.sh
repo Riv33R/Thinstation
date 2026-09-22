@@ -142,6 +142,82 @@ Section "InputClass"
 EndSection
 EOF
 
+# 7. Предварительная настройка клиента Omnissa / VMware Horizon (сервер, SSL, автоподключение, мультимонитор)
+mkdir -p ts/build/packages/base/build/extra/etc/omnissa
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/omnissa/horizon-default-config
+view.defaultBroker = "https://vdi.dnestrschool1.online"
+view.sslVerificationMode = "3"
+view.autoConnectBroker = "TRUE"
+view.defaultDesktopSize = "1"
+EOF
+
+mkdir -p ts/build/packages/base/build/extra/etc/vmware
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/vmware/view-default-config
+view.defaultBroker = "https://vdi.dnestrschool1.online"
+view.sslVerificationMode = "3"
+view.autoConnectBroker = "TRUE"
+view.defaultDesktopSize = "1"
+EOF
+
+mkdir -p ts/build/packages/base/build/extra/etc/skel/.omnissa
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/skel/.omnissa/horizon-preferences
+view.defaultBroker = "https://vdi.dnestrschool1.online"
+view.sslVerificationMode = "3"
+view.autoConnectBroker = "TRUE"
+view.defaultDesktopSize = "1"
+EOF
+
+mkdir -p ts/build/packages/base/build/extra/etc/skel/.vmware
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/skel/.vmware/view-preferences
+view.defaultBroker = "https://vdi.dnestrschool1.online"
+view.sslVerificationMode = "3"
+view.autoConnectBroker = "TRUE"
+view.defaultDesktopSize = "1"
+EOF
+
+mkdir -p ts/build/packages/base/build/extra/root/.omnissa
+cp -vf ts/build/packages/base/build/extra/etc/skel/.omnissa/horizon-preferences ts/build/packages/base/build/extra/root/.omnissa/ 2>/dev/null || true
+mkdir -p ts/build/packages/base/build/extra/root/.vmware
+cp -vf ts/build/packages/base/build/extra/etc/skel/.vmware/view-preferences ts/build/packages/base/build/extra/root/.vmware/ 2>/dev/null || true
+
+# 8. Автоматическое расширение рабочего стола на все подключенные мониторы (Multi-Monitor Extended Desktop)
+mkdir -p ts/build/packages/base/build/extra/bin
+cat << 'EOF' > ts/build/packages/base/build/extra/bin/auto-multimonitor
+#!/bin/sh
+CONNECTED=$(xrandr -q 2>/dev/null | awk '/ connected/ {print $1}')
+COUNT=$(echo "$CONNECTED" | wc -w)
+if [ "$COUNT" -gt 1 ]; then
+    CMD="xrandr"
+    PREV=""
+    for MON in $CONNECTED; do
+        if [ -z "$PREV" ]; then
+            CMD="$CMD --output $MON --auto --primary"
+        else
+            CMD="$CMD --output $MON --auto --right-of $PREV"
+        fi
+        PREV="$MON"
+    done
+    $CMD 2>/dev/null || true
+fi
+EOF
+chmod +x ts/build/packages/base/build/extra/bin/auto-multimonitor || true
+
+mkdir -p ts/build/packages/base/build/extra/etc/xdg/autostart
+cat << 'EOF' > ts/build/packages/base/build/extra/etc/xdg/autostart/auto-multimonitor.desktop
+[Desktop Entry]
+Type=Application
+Name=Auto Multi-Monitor
+Exec=/bin/auto-multimonitor
+Terminal=false
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+mkdir -p ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d
+cp -vf ts/build/packages/base/build/extra/bin/auto-multimonitor ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d/00-multimonitor.sh || true
+chmod +x ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d/00-multimonitor.sh || true
+
 echo "--> Запуск сборки образа ThinStation..."
 ./setup-chroot -b < /dev/null
 

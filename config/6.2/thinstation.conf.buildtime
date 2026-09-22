@@ -27,9 +27,12 @@ XKBVARIANT=","
 XKBOPTIONS="grp:alt_shift_toggle,grp_led:scroll"
 LOCALE=ru_RU
 
-# --- Разрешение экрана и графическая оболочка ---
-SET_RESOLUTION_MULTIMONITOR_EXPAND='mirror'
-SET_RESOLUTION_MULTIMONITOR_AUTOSCALE='scale'
+# --- Разрешение экрана и поддержка нескольких мониторов (Extended Desktop) ---
+USE_XRANDR=true
+XRANDR_OPTIONS="--auto"
+SET_RESOLUTION_MULTIMONITOR_EXPAND='expand'
+SET_RESOLUTION_MULTIMONITOR_AUTOSCALE='off'
+SESSION_0_VMVIEW_ALLMONITORS=true
 DESKTOP_ICON_SIZE=48
 GTK_THEME=Adwaita
 XFWM4_THEME=Default
