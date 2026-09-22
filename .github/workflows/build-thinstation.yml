@@ -1,0 +1,89 @@
+name: Build Thinstation ISO
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Версия Thinstation для сборки'
+        required: true
+        default: '7.2-Stable'
+        type: choice
+        options:
+          - '7.2-Stable'
+          - '6.2-Stable'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Thinstation ISO
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space on runner
+        run: |
+          echo "=== Дисковое пространство до очистки ==="
+          df -h /
+          echo "=== Удаление неиспользуемых компонентов runners для освобождения места ==="
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -a --force || true
+          echo "=== Дисковое пространство после очистки ==="
+          df -h /
+
+      - name: Run Thinstation Build inside Privileged Container
+        run: |
+          VERSION="${{ github.event.inputs.version || '7.2-Stable' }}"
+          echo "=========================================="
+          echo "Запуск сборки Thinstation: $VERSION"
+          echo "Целевой VDI сервер: vdi.dnestrschool1.online"
+          echo "=========================================="
+
+          # Обеспечиваем права на исполнение скрипта
+          chmod +x scripts/build.sh
+
+          # Сборка запускается в привилегированном контейнере Fedora 42 (для 7.2) или Ubuntu (для 6.2)
+          if [ "$VERSION" = "7.2-Stable" ]; then
+            CONTAINER_IMAGE="fedora:42"
+            SETUP_CMD="dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which"
+          else
+            CONTAINER_IMAGE="ubuntu:22.04"
+            SETUP_CMD="apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git build-essential xorriso squashfs-tools bc libncurses5-dev libssl-dev bison flex syslinux-utils"
+          fi
+
+          docker run --privileged --rm \
+            -e VERSION="$VERSION" \
+            -v "${{ github.workspace }}:/workspace" \
+            "$CONTAINER_IMAGE" \
+            /bin/bash -c "
+              set -e
+              echo '=== Установка системных утилит в контейнере ==='
+              $SETUP_CMD
+              /workspace/scripts/build.sh \"$VERSION\" /workspace
+            "
+
+      - name: Upload ISO and Boot Images as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thinstation-${{ github.event.inputs.version || '7.2-Stable' }}-iso
+          path: output/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Release on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: output/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,51 @@
+# ==============================================================================
+# ThinStation 7.2 Build-Time Configuration
+# Сервер VDI: vdi.dnestrschool1.online (VMware / Omnissa Horizon)
+# ==============================================================================
+
+# --- Настройки сессии Omnissa / VMware Horizon ---
+SESSION_0_TITLE="VDI School"
+SESSION_0_TYPE=horizon
+SESSION_0_AUTOSTART=On
+SESSION_0_HORIZON_SERVER="VDI School"
+SESSION_0_HORIZON_SERVERURL="https://vdi.dnestrschool1.online"
+SESSION_0_HORIZON_FULLSCREEN=true
+SESSION_0_HORIZON_NONINTERACTIVE=false
+
+# Глобальные параметры клиента Horizon
+HORIZON_AUTOCONNECT=TRUE
+HORIZON_SSLVERIFYMODE=1
+
+# --- Настройки звука ---
+AUDIO_LEVEL=85
+MIC_LEVEL=50
+
+# --- Язык и раскладка клавиатуры ---
+# Переключение раскладки: Alt + Shift, индикация на ScrollLock
+KEYBOARD_MAP=ru
+XKEYBOARD="us,ru"
+XKBVARIANT=","
+XKBOPTIONS="grp:alt_shift_toggle,grp_led:scroll"
+LOCALE=ru_RU
+
+# --- Разрешение экрана и оконный менеджер ---
+SET_RESOLUTION_MULTIMONITOR_EXPAND='mirror'
+SET_RESOLUTION_MULTIMONITOR_AUTOSCALE='scale'
+DESKTOP_ICON_SIZE=48
+GTK_THEME=Adwaita
+XFWM4_THEME=Default
+PANEL_PAGER=false
+PANEL_USER=false
+PANEL_REV_CLOCKSYSTRAY=true
+
+# --- Сеть и синхронизация времени (NTP) ---
+NET_USE=BOTH
+NET_USE_DHCP=on
+NET_HOSTNAME=ts-*
+TIME_ZONE=Europe/Chisinau
+NET_TIME_SERVER=pool.ntp.org
+
+# --- Проброс и монтирование USB флеш-накопителей ---
+USB_STORAGE_SYNC=on
+BIND_MOUNT0="storage:/mnt/storage"
+STORAGE_CONFIG1=/mnt/storage

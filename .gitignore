@@ -1,0 +1,10 @@
+# Output directory for locally built ISO / images
+output/
+*.iso
+*.img
+*.vmlinuz*
+*.initrd*
+
+# Temporary build files
+tmp/
+*.log
