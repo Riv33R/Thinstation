@@ -98,6 +98,9 @@ done
 find "${BUILD_DIR}" /build -type f -name "*.iso" -exec cp -vf {} "${OUTPUT_DIR}/" \; 2>/dev/null || true
 
 
+# Генерация контрольных сумм SHA-256 для проверки целостности
+(cd "${OUTPUT_DIR}" && sha256sum * > SHA256SUMS.txt 2>/dev/null) || true
+
 # Обеспечиваем полные права на чтение файлов раннером GitHub Actions
 chmod -R 777 "${OUTPUT_DIR}" 2>/dev/null || true
 

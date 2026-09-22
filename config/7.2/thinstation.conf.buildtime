@@ -49,3 +49,7 @@ NET_TIME_SERVER=pool.ntp.org
 USB_STORAGE_SYNC=on
 BIND_MOUNT0="storage:/mnt/storage"
 STORAGE_CONFIG1=/mnt/storage
+
+# --- Метки томов накопителей для загрузки ---
+HDVOLNAME=THINSTATION
+CDVOLNAME=THINSTATION
