@@ -87,16 +87,32 @@ if [ -f "ts/build/packages/networkmanager/build/finalize" ]; then
     sed -i '/NetworkManager-wait-online/d' ts/build/packages/networkmanager/build/finalize || true
 fi
 
-# 2. Настройка NetworkManager на внутренний DHCP-клиент (dhcp=internal вместо устаревшего dhclient)
-mkdir -p ts/build/packages/networkmanager/build/extra/etc/NetworkManager/conf.d
-cat << 'EOF' > ts/build/packages/networkmanager/build/extra/etc/NetworkManager/conf.d/10-dhcp.conf
+# 2. Настройка NetworkManager: принудительное управление ВСЕМИ интерфейсами (Ethernet + Wi-Fi) и внутренний DHCP
+for nmdir in ts/build/packages/networkmanager/build/extra/etc/NetworkManager ts/build/packages/base/build/extra/etc/NetworkManager; do
+    mkdir -p "$nmdir/conf.d"
+    cat << 'EOF' > "$nmdir/conf.d/10-manage-all.conf"
 [main]
 dhcp=internal
+plugins=keyfile
+
+[keyfile]
+unmanaged-devices=none
+
+[device]
+match-device=*
+managed=true
 EOF
+    cp -vf "$nmdir/conf.d/10-manage-all.conf" "$nmdir/NetworkManager.conf" 2>/dev/null || true
+done
+
+# Удаление любых конфигураций, блокирующих управление устройствами
+find ts/build -name "*unmanaged*" -delete 2>/dev/null || true
+find ts/build -name "10-globally-managed-devices.conf" -delete 2>/dev/null || true
 
 # 3. Гарантированный автозапуск nm-applet в системном трее
-mkdir -p ts/build/packages/networkmanager/build/extra/etc/xdg/autostart
-cat << 'EOF' > ts/build/packages/networkmanager/build/extra/etc/xdg/autostart/nm-applet.desktop
+for xdgdir in ts/build/packages/networkmanager/build/extra/etc/xdg/autostart ts/build/packages/base/build/extra/etc/xdg/autostart; do
+    mkdir -p "$xdgdir"
+    cat << 'EOF' > "$xdgdir/nm-applet.desktop"
 [Desktop Entry]
 Name=Network
 Comment=Manage your network connections
@@ -106,10 +122,12 @@ Terminal=false
 Type=Application
 NotShowIn=KDE;
 EOF
+done
 
 # 4. Предварительно созданный профиль проводной сети (Ethernet auto-dhcp)
-mkdir -p ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections
-cat << 'EOF' > ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections/Wired.nmconnection
+for scdir in ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections ts/build/packages/base/build/extra/etc/NetworkManager/system-connections; do
+    mkdir -p "$scdir"
+    cat << 'EOF' > "$scdir/Wired.nmconnection"
 [connection]
 id=Wired
 uuid=d6b7b252-0c98-4c22-901c-6d9e79435bcf
@@ -117,13 +135,16 @@ type=ethernet
 autoconnect=true
 autoconnect-priority=1
 
+[ethernet]
+
 [ipv4]
 method=auto
 
 [ipv6]
 method=auto
 EOF
-chmod 600 ts/build/packages/networkmanager/build/extra/etc/NetworkManager/system-connections/Wired.nmconnection || true
+    chmod 600 "$scdir/Wired.nmconnection" || true
+done
 
 # 5. Привязка machine-id для D-Bus (устранение ошибки Horizon CdkClientInfo_SaveDeviceID)
 mkdir -p ts/build/packages/base/build/extra/var/lib/dbus
@@ -286,8 +307,9 @@ EOF
 mkdir -p ts/build/packages/base/build/extra/etc/xdg/autostart
 cp -vf ts/build/packages/networkmanager/build/extra/etc/xdg/autostart/nm-applet.desktop ts/build/packages/base/build/extra/etc/xdg/autostart/ 2>/dev/null || true
 
-echo "--> Запуск сборки образа ThinStation..."
-./setup-chroot -b < /dev/null
+echo "--> Запуск сборки образа ThinStation со всеми модулями ядра (All Modules)..."
+touch ts/build/ALLMODULES || true
+./setup-chroot -b -o --allmodules < /dev/null
 
 echo "--> Поиск и экспорт созданных загрузочных образов..."
 mkdir -p "${OUTPUT_DIR}"
