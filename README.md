@@ -144,7 +144,7 @@ git push origin main
 
 ```bash
 docker run --privileged --rm -v ${PWD}:/workspace fedora:42 /bin/bash -c "
-  dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which curl linux-firmware wireless-regdb network-manager-applet rfkill iw wireless-tools
+  dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which curl; dnf install -y --skip-broken linux-firmware wireless-regdb network-manager-applet iw || true
   chmod +x /workspace/scripts/build.sh
   /workspace/scripts/build.sh 7.2-Stable /workspace
 "

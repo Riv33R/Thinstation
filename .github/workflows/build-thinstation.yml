@@ -72,7 +72,7 @@ jobs:
           # Сборка запускается в привилегированном контейнере Fedora 42 (для 7.2) или Ubuntu (для 6.2)
           if [ "$VERSION" = "7.2-Stable" ]; then
             CONTAINER_IMAGE="fedora:42"
-            SETUP_CMD="dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which curl linux-firmware wireless-regdb network-manager-applet rfkill iw wireless-tools"
+            SETUP_CMD="dnf install -y git dnf coreutils findutils procps-ng util-linux tar xz gzip dbus-tools which curl; dnf install -y --skip-broken linux-firmware wireless-regdb network-manager-applet iw || true"
           else
             CONTAINER_IMAGE="ubuntu:22.04"
             SETUP_CMD="apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git build-essential xorriso squashfs-tools bc libncurses5-dev libssl-dev bison flex syslinux-utils curl"
