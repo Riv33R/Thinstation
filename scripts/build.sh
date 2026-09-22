@@ -43,6 +43,15 @@ touch ts/etc/READ etc/READ 2>/dev/null || true
 echo "--> Инициализация chroot-окружения (install-only)..."
 ./setup-chroot -a -i < /dev/null
 
+# Подготовка каталога downloads для проприетарных пакетов (Horizon / VMware)
+mkdir -p downloads /downloads ts/build/downloads
+if [ -d "${WORKSPACE_DIR}/downloads" ] && [ -n "$(ls -A "${WORKSPACE_DIR}/downloads" 2>/dev/null)" ]; then
+    echo "  [OK] Копирование файлов из каталога downloads репозитория..."
+    cp -vf "${WORKSPACE_DIR}/downloads/"* downloads/ 2>/dev/null || true
+    cp -vf "${WORKSPACE_DIR}/downloads/"* /downloads/ 2>/dev/null || true
+    cp -vf "${WORKSPACE_DIR}/downloads/"* ts/build/downloads/ 2>/dev/null || true
+fi
+
 echo "--> Применение конфигурационных файлов для vdi.dnestrschool1.online..."
 if [ -f "${CONF_DIR}/build.conf" ]; then
     echo "  [OK] Копирование build.conf"
