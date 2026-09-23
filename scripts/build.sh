@@ -150,6 +150,22 @@ done
 mkdir -p ts/build/packages/base/build/extra/var/lib/dbus
 ln -sf /etc/machine-id ts/build/packages/base/build/extra/var/lib/dbus/machine-id 2>/dev/null || true
 
+# 5.1. Подготовка каталогов для LightDM, X11, CUPS и D-Bus
+mkdir -p ts/build/packages/base/build/extra/var/lib/lightdm \
+         ts/build/packages/base/build/extra/var/log/lightdm \
+         ts/build/packages/base/build/extra/var/cache/lightdm \
+         ts/build/packages/base/build/extra/run/lightdm \
+         ts/build/packages/base/build/extra/var/spool/cups \
+         ts/build/packages/base/build/extra/var/cache/cups \
+         ts/build/packages/base/build/extra/var/log/cups \
+         ts/build/packages/base/build/extra/tmp/.X11-unix \
+         ts/build/packages/base/build/extra/tmp/.ICE-unix
+chmod 1777 ts/build/packages/base/build/extra/var/lib/lightdm 2>/dev/null || true
+chmod 1777 ts/build/packages/base/build/extra/var/log/lightdm 2>/dev/null || true
+chmod 1777 ts/build/packages/base/build/extra/var/cache/lightdm 2>/dev/null || true
+chmod 1777 ts/build/packages/base/build/extra/tmp/.X11-unix 2>/dev/null || true
+chmod 1777 ts/build/packages/base/build/extra/tmp/.ICE-unix 2>/dev/null || true
+
 # 6. Конфигурация тачпада для X.Org (включение tap-to-click / клик касанием)
 mkdir -p ts/build/packages/base/build/extra/etc/X11/xorg.conf.d
 cat << 'EOF' > ts/build/packages/base/build/extra/etc/X11/xorg.conf.d/30-touchpad.conf
@@ -276,7 +292,7 @@ chmod +x ts/build/packages/base/build/extra/etc/X11/xinit/xinitrc.d/00-multimoni
 echo "--> Копирование прошивок беспроводных адаптеров (Wi-Fi firmware)..."
 mkdir -p ts/build/packages/base/build/extra/lib/firmware
 cp -vf /lib/firmware/regulatory.db* ts/build/packages/base/build/extra/lib/firmware/ 2>/dev/null || true
-for fw in iwlwifi* intel rtw88 rtw89 rtlwifi mediatek ath10k ath11k brcm; do
+for fw in iwlwifi* intel i915 amdgpu radeon nouveau rtw88 rtw89 rtlwifi rtl_bt mediatek ath10k ath11k brcm; do
     for src in /lib/firmware/$fw; do
         if [ -e "$src" ]; then
             cp -rf "$src" ts/build/packages/base/build/extra/lib/firmware/ 2>/dev/null || true
@@ -339,6 +355,10 @@ echo "$MACHINE_ID" > /etc/machine-id
 chmod 0444 /etc/machine-id
 mkdir -p /var/lib/dbus
 cp -vf /etc/machine-id /var/lib/dbus/machine-id 2>/dev/null || true
+
+# Prepare runtime directories for LightDM, X11, D-Bus, and CUPS
+mkdir -p /var/log/lightdm /var/lib/lightdm /var/cache/lightdm /run/lightdm /tmp/.X11-unix /tmp/.ICE-unix /var/spool/cups /var/cache/cups /var/log/cups
+chmod 1777 /tmp/.X11-unix /tmp/.ICE-unix /var/log/lightdm /var/lib/lightdm /var/cache/lightdm 2>/dev/null || true
 
 # Input file where capabilities are stored
 CAP_FILE="/etc/filecaps"
@@ -405,9 +425,9 @@ for grub_tmpl in ts/build/boot-images/templates/grub/default/grub.cfg; do
     fi
 done
 
-echo "--> Запуск оптимизированной сборки образа ThinStation..."
-rm -f ts/build/ALLMODULES || true
-./setup-chroot -b < /dev/null
+echo "--> Запуск сборки образа ThinStation со всеми модулями ядра (All Modules)..."
+touch ts/build/ALLMODULES || true
+./setup-chroot -b -o --allmodules < /dev/null
 
 echo "--> Поиск и экспорт созданных загрузочных образов..."
 mkdir -p "${OUTPUT_DIR}"
