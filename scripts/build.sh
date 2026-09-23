@@ -386,6 +386,9 @@ if [ -e "$XATTR_FILE" ] && which setfattr >/dev/null 2>&1; then
     done < "$XATTR_FILE"
 fi
 
+# Refresh dynamic linker cache
+ldconfig 2>/dev/null || true
+
 # Hand over control to systemd with diagnostics and emergency shell fallback
 for sysd in /lib64/systemd/systemd /usr/lib/systemd/systemd /bin/systemd /sbin/init; do
     if [ -x "$sysd" ]; then
