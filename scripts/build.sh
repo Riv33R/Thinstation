@@ -307,9 +307,107 @@ EOF
 mkdir -p ts/build/packages/base/build/extra/etc/xdg/autostart
 cp -vf ts/build/packages/networkmanager/build/extra/etc/xdg/autostart/nm-applet.desktop ts/build/packages/base/build/extra/etc/xdg/autostart/ 2>/dev/null || true
 
-echo "--> Запуск сборки образа ThinStation со всеми модулями ядра (All Modules)..."
-touch ts/build/ALLMODULES || true
-./setup-chroot -b -o --allmodules < /dev/null
+# 10. Патч базового скрипта init: гарантированное создание machine-id и безопасный запуск systemd с аварийным шеллом
+if [ -f "ts/build/packages/base/init" ]; then
+    echo "  [OK] Патч ts/build/packages/base/init (machine-id и fallback shell)..."
+    cat << 'EOF' > ts/build/packages/base/init
+#!/bin/sh
+
+# Mount essential filesystems
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t devtmpfs none /dev
+
+# Parse machine_id from /proc/cmdline and guarantee valid /etc/machine-id
+MACHINE_ID=""
+if [ -e /proc/cmdline ]; then
+    MACHINE_ID=$(awk -F'machine_id=' '{if (NF>1) print $2}' /proc/cmdline | awk '{print $1}')
+    if grep -q /proc/cmdline -e quiet; then
+        clear
+    fi
+fi
+
+if [ -z "$MACHINE_ID" ] || [ "$MACHINE_ID" = "10000000000000000000000000000001" ]; then
+    if [ -f /proc/sys/kernel/random/boot_id ]; then
+        MACHINE_ID=$(tr -d '-' < /proc/sys/kernel/random/boot_id)
+    else
+        MACHINE_ID="a1b2c3d4e5f67890123456789abcdef0"
+    fi
+fi
+
+echo "$MACHINE_ID" > /etc/machine-id
+chmod 0444 /etc/machine-id
+mkdir -p /var/lib/dbus
+cp -vf /etc/machine-id /var/lib/dbus/machine-id 2>/dev/null || true
+
+# Input file where capabilities are stored
+CAP_FILE="/etc/filecaps"
+if [ -e "$CAP_FILE" ]; then
+    while IFS= read -r line; do
+        file_path="${line% *}"
+        caps="${line##* }"
+        if [ -n "$caps" ] && [ -e "$file_path" ]; then
+            setcap "$caps" "$file_path" 2>/dev/null || true
+        fi
+    done < "$CAP_FILE"
+fi
+
+# Define the input file containing the xattrs
+XATTR_FILE="/etc/filexattrs"
+if [ -e "$XATTR_FILE" ] && which setfattr >/dev/null 2>&1; then
+    while IFS= read -r line; do
+        filename=$(echo "$line" | awk '{print $1}')
+        attr=$(echo "$line" | awk '{$1=""; print substr($0, 2)}')
+        attr_name=$(echo "$attr" | cut -d'=' -f1)
+        attr_value=$(echo "$attr" | cut -d'=' -f2- | tr -d '"')
+        if ! setfattr -n "$attr_name" -v "$attr_value" "$filename" 2>/dev/null; then
+            true
+        fi
+    done < "$XATTR_FILE"
+fi
+
+# Hand over control to systemd with diagnostics and emergency shell fallback
+for sysd in /lib64/systemd/systemd /usr/lib/systemd/systemd /bin/systemd /sbin/init; do
+    if [ -x "$sysd" ]; then
+        echo "Starting init system: $sysd"
+        exec "$sysd" "$@"
+    fi
+done
+
+echo "CRITICAL: Could not execute systemd or init!"
+ls -la /lib64/systemd/ /usr/lib/systemd/ 2>/dev/null || true
+echo "Dropping to emergency /bin/sh shell..."
+exec /bin/sh
+EOF
+    chmod +x ts/build/packages/base/init
+fi
+
+# 11. Защита библиотек systemd в fastboot
+if [ -f "ts/build/fastboot/bin-boot" ]; then
+    echo "  [OK] Добавление утилит systemd в fastboot/bin-boot..."
+    for sbin in systemd-machine-id-setup systemd-journald systemd-udevd systemd-logind; do
+        if ! grep -q "^$sbin\$" ts/build/fastboot/bin-boot 2>/dev/null; then
+            echo "$sbin" >> ts/build/fastboot/bin-boot
+        fi
+    done
+fi
+
+if [ -f "ts/build/fastboot/fastboot-mangle" ]; then
+    echo "  [OK] Патч fastboot-mangle: сканирование зависимостей systemd..."
+    sed -i 's|ldd sbin/\* 2>/dev/null >> /tmp/fastlibneed|ldd sbin/* 2>/dev/null >> /tmp/fastlibneed\n\tldd lib64/systemd/* 2>/dev/null >> /tmp/fastlibneed 2>/dev/null \|\| true|' ts/build/fastboot/fastboot-mangle || true
+fi
+
+# 12. Патч шаблона GRUB: поиск корневого диска по наличию /boot/vmlinuz
+for grub_tmpl in ts/build/boot-images/templates/grub/default/grub.cfg; do
+    if [ -f "$grub_tmpl" ]; then
+        echo "  [OK] Патч GRUB: search --file /boot/vmlinuz..."
+        sed -i 's|#loadfont unicode|search --no-floppy --file --set=root /boot/vmlinuz\n#loadfont unicode|' "$grub_tmpl" || true
+    fi
+done
+
+echo "--> Запуск оптимизированной сборки образа ThinStation..."
+rm -f ts/build/ALLMODULES || true
+./setup-chroot -b < /dev/null
 
 echo "--> Поиск и экспорт созданных загрузочных образов..."
 mkdir -p "${OUTPUT_DIR}"
